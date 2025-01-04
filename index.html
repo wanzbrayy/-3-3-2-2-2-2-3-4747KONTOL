@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movie Website</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #121212;
+      color: #fff;
+    }
+    .movie-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      padding: 20px;
+    }
+    .movie-card {
+      background: #1e1e1e;
+      border-radius: 8px;
+      overflow: hidden;
+      width: 200px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+    .movie-card img {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+    }
+    .movie-card h3 {
+      font-size: 1.2em;
+      margin: 10px;
+    }
+    .movie-card p {
+      font-size: 0.9em;
+      margin: 10px;
+      color: #aaa;
+    }
+    .movie-card a {
+      display: block;
+      margin: 10px;
+      padding: 10px;
+      background-color: #ff5722;
+      color: white;
+      text-align: center;
+      text-decoration: none;
+      border-radius: 5px;
+      font-size: 0.9em;
+    }
+    .movie-card a:hover {
+      background-color: #e64a19;
+    }
+
+    /* Modal styling */
+    #modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    #trailer-iframe {
+      width: 80%;
+      height: 80%;
+      border: none;
+    }
+    .modal-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 24px;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1 style="text-align: center; padding: 20px;">movie wanzofc</h1>
+  <div class="movie-container" id="movie-container"></div>
+
+  <!-- Modal for Trailer -->
+  <div id="modal">
+    <div class="modal-close" onclick="closeModal()">X</div>
+    <iframe id="trailer-iframe" src="" allow="autoplay; encrypted-media"></iframe>
+  </div>
+
+  <script>
+    const API_KEY = '8eccbe7f7ee0f975eccb8ecea6c70a73';
+    const API_URL = `https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}`;
+    const PROVIDER_URL = (movieId) => `https://api.themoviedb.org/3/movie/${movieId}/watch/providers?api_key=${API_KEY}`;
+    const TRAILER_URL = (movieId) => `https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=${API_KEY}`;
+    async function fetchMovies() {
+      try {
+        const response = await fetch(API_URL);
+        const data = await response.json();
+        displayMovies(data.results);
+      } catch (error) {
+        console.error('Error fetching movies:', error);
+      }
+    }
+    async function fetchTrailer(movieId) {
+      try {
+        const response = await fetch(TRAILER_URL(movieId));
+        const data = await response.json();
+        if (data.results && data.results.length > 0) {
+          return `https://www.youtube.com/embed/${data.results[0].key}?autoplay=1`; 
+      }
+        return null;
+      } catch (error) {
+        console.error('Error fetching trailer:', error);
+        return null;
+      }
+    }
+    async function fetchProviders(movieId) {
+      try {
+        const response = await fetch(PROVIDER_URL(movieId));
+        const data = await response.json();
+        if (data.results && data.results.US) {
+          return data.results.US.link;
+        }
+        return null;
+      } catch (error) {
+        console.error('Error fetching providers:', error);
+        return null;
+      }
+    }
+    async function displayMovies(movies) {
+      const container = document.getElementById('movie-container');
+      for (const movie of movies) {
+        const movieCard = document.createElement('div');
+        movieCard.classList.add('movie-card');
+        const trailerUrl = await fetchTrailer(movie.id);
+        const providerLink = await fetchProviders(movie.id);
+        movieCard.innerHTML = `
+          <img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title}">
+          <h3>${movie.title}</h3>
+          <p>Rating: ${movie.vote_average}</p>
+          ${trailerUrl ? `<a href="#" onclick="showTrailer('${trailerUrl}')">trailer</a>` : '<p>No trailer available</p>'}
+          ${providerLink ? `<a href="${providerLink}" target="_blank">menonton</a>` : '<p>No streaming available</p>'}
+        `;
+        container.appendChild(movieCard);
+      }
+    }
+    function showTrailer(trailerUrl) {
+      const modal = document.getElementById('modal');
+      const trailerIframe = document.getElementById('trailer-iframe');
+      trailerIframe.src = trailerUrl;
+      modal.style.display = 'flex'; 
+    }
+    function closeModal() {
+      const modal = document.getElementById('modal');
+      const trailerIframe = document.getElementById('trailer-iframe');
+      trailerIframe.src = ''; 
+      modal.style.display = 'none';
+    }
+
+    fetchMovies();
+  </script>
+</body>
+</html>
